@@ -1,66 +1,98 @@
 import React from "react";
+import "../CSS/Pagination.css"; 
+
+const PaginationButton = ({ isActive, isDisabled, onClick, children, ariaLabel }) => {
+  const classNames = [
+    "pagination-button",
+    isActive ? "active" : "",
+    isDisabled ? "disabled" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={isDisabled}
+      aria-label={ariaLabel}
+      aria-current={isActive ? "page" : undefined}
+      className={classNames}
+    >
+      {children}
+    </button>
+  );
+};
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const getPageNumbers = () => {
-    const pageNumbers = [];
-    const maxVisiblePages = 5;
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+    let left = currentPage - delta;
+    let right = currentPage + delta;
 
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      if (currentPage <= 3) {
-        pageNumbers.push(1, 2, 3, 4, "...", totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pageNumbers.push(1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-      } else {
-        pageNumbers.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
+    if (left < 1) left = 1;
+    if (right > totalPages) right = totalPages;
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= left && i <= right)) {
+        range.push(i);
       }
     }
 
-    return pageNumbers;
+    let previous;
+    for (let number of range) {
+      if (previous) {
+        if (number - previous === 2) {
+          rangeWithDots.push(previous + 1);
+        } else if (number - previous > 2) {
+          rangeWithDots.push("...");
+        }
+      }
+      rangeWithDots.push(number);
+      previous = number;
+    }
+
+    return rangeWithDots;
   };
 
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="d-flex justify-content-center mt-4">
-      <button
-        className="btn btn-secondary mx-1"
+    <nav className="pagination-wrapper">
+      <PaginationButton
+        isDisabled={currentPage === 1}
         onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        aria-label="Previous Page"
+        ariaLabel="Previous Page"
       >
-        Previous
-      </button>
-      {pageNumbers.map((number, index) =>
-        number === "..." ? (
-          <span key={index} className="mx-2 text-muted">
+        &laquo;
+      </PaginationButton>
+
+      {pageNumbers.map((num, index) =>
+        num === "..." ? (
+          <span key={`dots-${index}`} className="pagination-dots">
             ...
           </span>
         ) : (
-          <button
-            key={number}
-            className={`btn mx-1 ${
-              number === currentPage ? "btn-primary" : "btn-outline-secondary"
-            }`}
-            onClick={() => onPageChange(number)}
-            aria-current={number === currentPage ? "page" : undefined}
+          <PaginationButton
+            key={num}
+            isActive={num === currentPage}
+            onClick={() => onPageChange(num)}
+            ariaLabel={`Go to page ${num}`}
           >
-            {number}
-          </button>
+            {num}
+          </PaginationButton>
         )
       )}
-      <button
-        className="btn btn-secondary mx-1"
+
+      <PaginationButton
+        isDisabled={currentPage === totalPages}
         onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        aria-label="Next Page"
+        ariaLabel="Next Page"
       >
-        Next
-      </button>
-    </div>
+        &raquo;
+      </PaginationButton>
+    </nav>
   );
 };
 
